@@ -13,7 +13,7 @@ To start things:
 ---
 When you've everything settled, just run `python3 __main__.py` or `pypy3 __main__.py`.
 
-Now for example, head onto a DM with the bot and say `hi`, it'd respond `Hello!`, that's resulting because of this code.
+Now for example, head onto a DM with the bot and say `hi`, it'll respond with `Hello!`.
 ```python
 @command()
     async def hi(self, ctx):
@@ -25,7 +25,7 @@ As you can see the ease of creating commands. Though this is not the entire code
 ### Adding a Module
 In the `cogs` folder create a new file `demo.py`, this'll be automatically loaded upon bot-start with certain conditions we'll later talk about on. For now putin this code:
 
-```
+```py
 from discord.ext.commands import Cog, command
 
 class Demo(Cog):
