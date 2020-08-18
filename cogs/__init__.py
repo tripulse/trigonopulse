@@ -26,11 +26,11 @@ from typing import (
 
 
 def collect_cogs() -> Iterator[Cog]:
-    """Collect all exported Cog objects exported through the `__cogexport__`
-    variable in the command modules in the current directory.
+    """Collect all exported Cog inherited objects exported by Python modules
+    in the current directory, methods starting with an underscore are
+    considered private and not loaded.
 
-    :return: an iterator of retrieve Cogs, entries which don't inherit from
-    the Cog superclass are discarded.
+    :return: an iterator of retrieved Cogs.
     """
 
     def load_module(name, path):
@@ -41,13 +41,32 @@ def collect_cogs() -> Iterator[Cog]:
         return module
 
     return itertools.chain.from_iterable(
-        map(lambda mod: filter(
-                lambda e: issubclass(e, Cog),  # only allow subclass of Cog.
-                getattr(load_module(utils.filename.from_str(mod).name, mod),
-                        '__cogexport__', None) or []),  # get exported cogs.
+        map(lambda mod: map(lambda x: x[1],  # extract actual object.
+            filter(
+                # check if one of their superclasses was Cog, but
+                # not Cog itself as its an abstract class.
+                lambda e: safe_funccall(issubclass, e[1], Cog) and
+                          e[1] != Cog,
+                load_module(Filename.from_str(mod).name, mod)
+                    .__dict__.items())),  # get global objects.
             pathlib.Path(os.path.dirname(__file__)).glob('*.py')))
 
 
 def setup(bot):
+    @bot.event
+    async def on_command_error(ctx, exception):
+        # a custom error handler for defining where should the "generalized"
+        # exceptions go.
+        if isinstance(exception,
+            (BadArgument, CommandNotFound, CommandOnCooldown,
+             CheckAnyFailure, NoPrivateMessage, MissingPermissions,
+             UnexpectedQuoteError, BotMissingPermissions,
+             MaxConcurrencyReached, MissingRequiredArgument,
+             ExpectedClosingQuoteError, InvalidEndOfQuotedStringError)):
+            await ctx.send(f"```{exception}```")
+        else:
+            traceback.print_exception(exception.__class__, exception,
+                                      exception.__traceback__)
+
     for cog in collect_cogs():
         bot.add_cog(cog(bot))
