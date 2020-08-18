@@ -17,7 +17,7 @@ import discord
 from discord.ext.commands import Bot
 import discord.utils
 
-import utils
+from utils.misc import safe_subscript
 import os
 import re
 
@@ -31,7 +31,7 @@ def retrieve_prefix(bot, message):
     """
 
     return '' if isinstance(message.channel, discord.DMChannel) else \
-        [f'<@!{bot.user.id}>' + (utils.safe_subscript(
+        [f'<@!{bot.user.id}>' + (safe_subscript(
             re.match(rf'@{bot.user.name}(\s*)',
                      message.clean_content), 1) or '')]
 

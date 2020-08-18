@@ -14,26 +14,13 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import typing
-import urllib.parse
 import os
+import urllib.parse
 
 
-def safe_subscript(o, index):
-    """Safely work with the subscript operator on an object.
-
-    :return: value if succeeded or None.
-    """
-
-    try:
-        return o[index]
-    except:
-        pass
-
-
-class filename(typing.NamedTuple):
+class Filename(typing.NamedTuple):
     """Represents a structure of a general filename, each filename has a
-    optional extension to hint about the file-type without reading the file
-    itself which is obviously for convenience purposes."""
+    optional extension to hint about the file-type without reading the file."""
 
     name: str
     ext: str
@@ -52,9 +39,9 @@ class filename(typing.NamedTuple):
         path = str(path)  # force convert to a string.
         name, _, ext = os.path.basename(path).rpartition('.')
 
-        return filename(name, ext)
+        return Filename(name, ext)
 
     @staticmethod
     def from_url(url: str):
         """Same as `filename.from_str()` but constructs from a URL."""
-        return filename.from_str(urllib.parse.urlparse(url)[2])
+        return Filename.from_str(urllib.parse.urlparse(url)[2])

@@ -16,12 +16,28 @@
 import os.path
 import pathlib
 import importlib.util
-import utils
+from utils.misc import safe_funccall
+from utils.filesys import Filename
 import itertools
+import traceback
 
 from discord.ext.commands import Cog
 from typing import (
     Iterator
+)
+from discord.ext.commands.errors import (
+    BadArgument,
+    CheckAnyFailure,
+    CommandNotFound,
+    CommandOnCooldown,
+    NoPrivateMessage,
+    MissingPermissions,
+    UnexpectedQuoteError,
+    BotMissingPermissions,
+    MaxConcurrencyReached,
+    MissingRequiredArgument,
+    ExpectedClosingQuoteError,
+    InvalidEndOfQuotedStringError,
 )
 
 
