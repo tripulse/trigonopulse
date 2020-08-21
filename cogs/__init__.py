@@ -16,7 +16,7 @@
 import os.path
 import pathlib
 import importlib.util
-from utils.misc import safe_funccall
+from utils.misc import call
 from utils.filesys import Filename
 import itertools
 import traceback
@@ -27,6 +27,7 @@ from typing import (
 )
 from discord.ext.commands.errors import (
     BadArgument,
+    CommandError,
     CheckAnyFailure,
     CommandNotFound,
     CommandOnCooldown,
@@ -61,7 +62,7 @@ def collect_cogs() -> Iterator[Cog]:
             filter(
                 # check if one of their superclasses was Cog, but
                 # not Cog itself as its an abstract class.
-                lambda e: safe_funccall(issubclass, e[1], Cog) and
+                lambda e: call(issubclass, e[1], Cog) and
                           e[1] != Cog,
                 load_module(Filename.from_str(mod).name, mod)
                     .__dict__.items())),  # get global objects.
@@ -74,15 +75,14 @@ def setup(bot):
         # a custom error handler for defining where should the "generalized"
         # exceptions go.
         if isinstance(exception,
-            (BadArgument, CommandNotFound, CommandOnCooldown,
+            (BadArgument, CommandError, CommandNotFound, CommandOnCooldown,
              CheckAnyFailure, NoPrivateMessage, MissingPermissions,
              UnexpectedQuoteError, BotMissingPermissions,
              MaxConcurrencyReached, MissingRequiredArgument,
              ExpectedClosingQuoteError, InvalidEndOfQuotedStringError)):
             await ctx.send(f"```{exception}```")
-        else:
-            traceback.print_exception(exception.__class__, exception,
-                                      exception.__traceback__)
+        traceback.print_exception(exception.__class__, exception,
+                                  exception.__traceback__)
 
     for cog in collect_cogs():
         bot.add_cog(cog(bot))
