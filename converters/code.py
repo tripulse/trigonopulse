@@ -24,5 +24,5 @@ class CodeBlockConverter(Converter):
 
     _EXTRACT = re.compile(r'^```(.+)```$')
 
-    async def convert(self, _, code) -> CodeBlock:
+    async def convert(self, _, code):
         return at(self._EXTRACT.match(code), 1) or ''

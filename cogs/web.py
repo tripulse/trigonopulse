@@ -17,7 +17,7 @@ from discord import Embed
 from discord.ext.commands import Cog, group
 from discord.ext.commands.errors import CommandError
 
-from converters.code import CodeBlockConverter, CodeBlock
+from converters.code import CodeBlockConverter
 from converters.mime import RestrictedMimetypeConverter
 
 from requests import Request
