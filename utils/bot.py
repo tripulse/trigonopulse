@@ -15,19 +15,21 @@
 
 from discord import Colour
 from random import choice
-from utils.misc import safe_subscript
+from utils.misc import at
 
 
 def get_color() -> Colour:
     """Get a random :code:`Colour` object."""
 
     return getattr(Colour, choice([
-        'teal', 'dark_teal', 'green', 'dark_green', 'blue', 'dark_blue', 'purple', 'dark_purple', 'magenta',
-        'dark_magenta', 'gold', 'dark_gold', 'orange', 'dark_orange', 'red', 'dark_red', 'lighter_grey',
+        'teal', 'dark_teal', 'green', 'dark_green', 'blue', 'dark_blue',
+        'purple', 'dark_purple', 'magenta', 'dark_magenta', 'gold',
+        'dark_gold', 'orange', 'dark_orange', 'red', 'dark_red', 'lighter_grey',
         'darker_grey', 'blurple', 'greyple']))()
 
 
 def get_member_color(member) -> Colour:
     """Get the final rendered color of a guild member as of its highest role."""
-    return getattr(safe_subscript(member.roles, -1), 'colour', None) or \
-           Colour.default()
+
+    return getattr(at(member.roles, -1), 'colour', None) or \
+        Colour.default()

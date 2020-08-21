@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-def safe_subscript(o, index):
+def at(o, index):
     """Safely work with the subscript operator on an object.
 
     :return: value if succeeded or None.
@@ -25,7 +25,7 @@ def safe_subscript(o, index):
         pass
 
 
-def safe_funccall(func, *args, **kwargs):
+def call(func, *args, **kwargs):
     """Safely call a function without fear of exceptions.
 
     :param func: actual function to wrap
