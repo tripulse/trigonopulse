@@ -24,15 +24,19 @@ from discord.ext.commands import (
     has_guild_permissions,
     bot_has_guild_permissions,
 )
-from discord import (
-    User,
-    Embed,
-    TextChannel,
+from discord.ext.commands.converter import (
+    TextChannelConverter,
+    MessageConverter,
+    UserConverter
 )
+
+from discord import Embed
 
 from aioitertools import takewhile, map, filterfalse, enumerate
 from aioitertools.more_itertools import chunked
 from utils.bot import get_member_color
+from utils.misc import at, call
+from utils.filesys import Filename
 
 
 class Utils(Cog):
@@ -42,10 +46,10 @@ class Utils(Cog):
     @has_permissions(manage_messages=True)
     @bot_has_permissions(manage_messages=True, read_message_history=True)
     @max_concurrency(number=1, per=BucketType.channel)
-    async def purge(self, ctx, num: int, *targets: User):
+    async def purge(self, ctx, num: int, *targets: UserConverter):
         """Bulk delete messages of a certain amount posted by some targeted
         Discord users, if not provided it just deletes all the messages which
-        it encounters"""
+        it encounters."""
 
         total_deleted = 0
         messages = ctx.history(limit=None)
@@ -55,7 +59,7 @@ class Utils(Cog):
 
         # discord has a bulk-deletion method which has limits that,
         # messages cannot be deleted older than 14 days.
-        # cannot delete more than 100 messages at once.
+        # cannot delete more than 100 and less than 2 messages at once.
         async for chunk in chunked(map(lambda m: m[1], takewhile(
                 lambda m: m[0] < num and
                          (ctx.message.created_at - m[1].created_at).days < 14,
@@ -70,51 +74,65 @@ class Utils(Cog):
         # for the rest follow the manual deletion way.
         async for msg in messages:
             if not total_deleted <= num:
-                await ctx.send(f"Purged {num} messages in {ctx.channel.mention}.",
-                               delete_after=8)
                 break
 
             if msg.author in targets or targets is None:
                 await msg.delete()
                 total_deleted += 1
+        else:
+            await ctx.send(f"Purged {num} messages in {ctx.channel.mention}",
+                           delete_after=8)
 
-    @group(aliases=['movmsg'], invoke_without_command=True)
+    @group(aliases=['movmsg', 'mmsg'],
+           invoke_without_command=True, case_insensitive=True)
     @has_guild_permissions(manage_messages=True)
     @bot_has_guild_permissions(manage_messages=True)
     @max_concurrency(number=1)
-    async def movemessage(self, ctx, channel: TextChannel, *message_ids: int):
+    async def movemessage(self, _, channel: TextChannelConverter,
+                          *messages: MessageConverter):
         """Post some messages with certain IDs whose exist in the current
         channel to a destination channel. Message containing an embed is
         ignored as nested embeds aren't allowed."""
 
-        for message_id in message_ids:
-            msg_to_move = await ctx.channel.fetch_message(message_id)
+        for msg in messages:
             destination_msg = Embed.from_dict({
-                'description': msg_to_move.content,
+                'description': msg.content,
                 'author': {
-                    'name': msg_to_move.author.nick or msg_to_move.author.name,
-                    'icon_url': str(msg_to_move.author.avatar_url)
+                    'name': msg.author.nick or msg.author.name,
+                    'icon_url': str(msg.author.avatar_url)
                 },
-                'color': get_member_color(msg_to_move.author).value
+                'color': get_member_color(msg.author).value
             })
 
-            if msg_to_move.attachments:
-                destination_msg.add_field(name='Attachments',
-                                          value='\n'.join(a.url for a in msg_to_move.attachments))
+            # TODO: video isn't supported for some reason.
+            first_attach_url = getattr(at(msg.attachments, 0), 'url', None)
+            is_first_embedable = Filename.from_url(first_attach_url).ext in \
+                ['jpg', 'jpeg', 'png', 'gif', 'webp']
+
+            if is_first_embedable:
+                destination_msg = Embed.from_dict({**destination_msg.to_dict(),
+                    **{'image': {'url': first_attach_url}}})
+
+            if not is_first_embedable or len(msg.attachments) > 1:
+                attachment_str = '\n'.join(
+                    a.url for a in
+                    msg.attachments[int(not is_first_embedable):])
+
+                if attachment_str:
+                    destination_msg.add_field(name='Attachments',
+                                              value=attachment_str)
 
             destination_msg = await channel.send(embed=destination_msg)
-            for reaction in msg_to_move.reactions:
+            for reaction in msg.reactions:
                 await destination_msg.add_reaction(reaction)
 
-            await msg_to_move.delete()
+            await msg.delete()  # delete after sending.
 
     @movemessage.command(name='bulk')
-    async def bulk_movemessage(self, ctx, dest: TextChannel, num: int):
+    async def bulk_movemessage(self, ctx, dest: TextChannelConverter, num: int):
         """Transfer atmost a given amount messages starting from the last
         sent message in the current channel."""
 
-        num = num + 1  # the message invoked this should stay intact.
-
-        for msg in reversed(await ctx.history(limit=num).flatten()):
-            if ctx.message.id != msg.id:
-                await self.movemessage(ctx, dest, msg.id)
+        num += 1  # the message invoked this should stay intact.
+        await self.movemessage(ctx, dest,
+            *reversed((await ctx.history(limit=num).flatten())[1:]))
