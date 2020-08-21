@@ -17,7 +17,7 @@ import discord
 from discord.ext.commands import Bot
 import discord.utils
 
-from utils.misc import safe_subscript
+from utils.misc import at
 import os
 import re
 
@@ -31,7 +31,7 @@ def retrieve_prefix(bot, message):
     """
 
     return '' if isinstance(message.channel, discord.DMChannel) else \
-        [f'<@!{bot.user.id}>' + (safe_subscript(
+        [f'<@!{bot.user.id}>' + (at(
             re.match(rf'@{bot.user.name}(\s*)',
                      message.clean_content), 1) or '')]
 
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # make instance of Bot that'd handle all the events or commands fired by
     # discord, the prefix is through mentioning the bot user or in DMs just
     # without prefix because it's redundant in a two-user channel.
-    handler = Bot(retrieve_prefix)
+    handler = Bot(retrieve_prefix, case_insensitive=True)
 
     handler.load_extension('cogs')
     try:

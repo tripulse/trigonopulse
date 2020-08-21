@@ -63,7 +63,7 @@ class Basic(Cog):
         await ctx.send(''.join(random.choice([c.upper, c.lower])()
                                for c in text))
 
-    @group(name='5igi0', aliases=['sigio', 'sigi0'])
+    @group(name='5igi0', aliases=['sigio', 'sigi0'], case_insensitive=True)
     async def sigio(self, _):
         """A morse-code like binary interchange format, that consists of `-`
         and `'` characters"""
@@ -97,7 +97,7 @@ class Basic(Cog):
         except UnicodeDecodeError:
             raise BadArgument("5IGI0 sequence cannot be converted using UTF-8")
 
-    @command(aliases=['rms', 'rmsquote', 'stallman'])
+    @command(aliases=['interjection', 'rms', 'rmsquote', 'stallman'])
     async def interject(self, ctx, thing: str = 'Linux'):
         """Interject on something attributing to RMS (Richard M. Stallman's)
         nonfactual quote."""
@@ -105,3 +105,4 @@ class Basic(Cog):
         await ctx.send(f"I'd just like to interject for a moment.  What you're "
                        f"referring to as Linux, is in fact, GNU/{thing}, or as "
                        f"I've recently taken to calling it, GNU plus {thing}.")
+
