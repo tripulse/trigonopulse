@@ -26,6 +26,9 @@ from functools import reduce
 
 
 class Basic(Cog):
+    _char_to_emote = dict(((c, f':regional_indicator_{c}:')
+                          for c in map(chr, range(97, 123))))
+
     @command(aliases=['tst', 'ping'])
     async def test(self, ctx):
         """Verify that the bot is usable, tells the current WebSocket delay"""
@@ -106,3 +109,15 @@ class Basic(Cog):
                        f"referring to as Linux, is in fact, GNU/{thing}, or as "
                        f"I've recently taken to calling it, GNU plus {thing}.")
 
+    @command(aliases=['emtext', 'etxt'])
+    async def emotetext(self, ctx, *, text: str):
+        """Transform normal English text into large emote using special
+        regional indicator emojis."""
+
+        res = ''
+        for c in text.lower():  # only lowercase.
+            if len(res) > 2000:
+                break
+            res += self._char_to_emote.get(c) or c
+
+        await ctx.send(res[:2000])
