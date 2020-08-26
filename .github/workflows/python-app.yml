@@ -17,4 +17,6 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
     - name: Run the bot
+      env:
+        DISCORD_TOKEN: NzM1NDU5MTc2NjgzNDA1MzYy.Xxgjuw.6G2X-EO87ylRuOoiXrdNNeszvdw
       run: python3 __main__.py
