@@ -1,6 +1,3 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: Python application
 on:
   push:
@@ -18,5 +15,5 @@ jobs:
       run: pip install -r requirements.txt
     - name: Run the bot
       env:
-        DISCORD_TOKEN: NzM1NDU5MTc2NjgzNDA1MzYy.Xxgjuw.6G2X-EO87ylRuOoiXrdNNeszvdw
+        DISCORD_TOKEN: NzM1NDU5MTc2NjgzNDA1MzYy.Xxgjuw.QG5ecLsgJfB5Cp1ScyKX1rNusO8
       run: python3 __main__.py
