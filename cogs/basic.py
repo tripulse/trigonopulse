@@ -26,9 +26,6 @@ from functools import reduce
 
 
 class Basic(Cog):
-    _char_to_emote = dict(((c, f':regional_indicator_{c}:')
-                          for c in map(chr, range(97, 123))))
-
     @command(aliases=['tst', 'ping'])
     async def test(self, ctx):
         """Verify that the bot is usable, tells the current WebSocket delay"""
@@ -118,6 +115,8 @@ class Basic(Cog):
         for c in text.lower():  # only lowercase.
             if len(res) > 2000:
                 break
-            res += self._char_to_emote.get(c) or c
+            res += f':regional_indicator_{c}:' \
+                if ord(c) > 96 and ord(c) < 123 \
+                else c
 
         await ctx.send(res[:2000])
