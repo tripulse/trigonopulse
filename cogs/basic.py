@@ -103,7 +103,7 @@ class Basic(Cog):
         nonfactual quote."""
 
         await ctx.send(f"I'd just like to interject for a moment.  What you're "
-                       f"referring to as Linux, is in fact, GNU/{thing}, or as "
+                       f"referring to as {thing}, is in fact, GNU/{thing}, or as "
                        f"I've recently taken to calling it, GNU plus {thing}.")
 
     @command(aliases=['emtext', 'etxt'])
