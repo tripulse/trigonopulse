@@ -13,34 +13,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import discord
-from discord.ext.commands import Bot
-import discord.utils
+from discord.ext.commands import Bot, when_mentioned
 
-from utils.misc import at
 import os
 import re
-
-
-def retrieve_prefix(bot, message):
-    """Get the current prefix to look for to do a valid command invocation,
-    in DMs a prefix isn't required but a guild context a mention is though.
-
-    :return: prefix string if found or None if not.
-    :raises SyntaxError: if nothing matched the prefix.
-    """
-
-    return '' if isinstance(message.channel, discord.DMChannel) else \
-        [f'<@!{bot.user.id}>' + (at(
-            re.match(rf'@{bot.user.name}(\s*)',
-                     message.clean_content), 1) or '')]
-
 
 if __name__ == '__main__':
     # make instance of Bot that'd handle all the events or commands fired by
     # discord, the prefix is through mentioning the bot user or in DMs just
     # without prefix because it's redundant in a two-user channel.
-    handler = Bot(retrieve_prefix, case_insensitive=True)
+    handler = Bot(command_prefix=when_mentioned, case_insensitive=True)
 
     handler.load_extension('cogs')
     try:
