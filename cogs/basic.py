@@ -28,13 +28,13 @@ from functools import reduce
 class Basic(Cog):
     @command(aliases=['tst', 'ping'])
     async def test(self, ctx):
-        """Verify that the bot is usable, tells the current WebSocket delay"""
+        """Verify that the bot is usable, tells the WebSocket RTT"""
 
-        await ctx.send(f"{round(ctx.bot.latency * 1000, 2)}ms")
+        await ctx.send(round(ctx.bot.latency * 1000) + "ms")
 
     @command(aliases=['rnd', 'rndnum', 'rnum'])
     async def random(self, ctx, min: float, max: float):
-        """Generate a pseudorandom decimal in bound of (min..max]"""
+        """Generate a uniform pseudorandom real number within (min..max]"""
 
         await ctx.send(random.uniform(min, max))
 
@@ -55,13 +55,11 @@ class Basic(Cog):
             raise BadArgument("Disallowing 2000 character limit of Discord")
         await ctx.send(''.join(c + ' ' * spaces for c in text))
 
-    @command(aliases=['skwiggle', 'rndcap', 'randomcaptialisation'])
+    @command(aliases=['skwiggle', 'rndcap'])
     async def altcap(self, ctx, *, text: str):
-        """Randomly capitalizes each English letter of a text as if it was
-        wrong in a ironic way."""
+        """Randomly capitalizes each English letter of a text"""
 
-        await ctx.send(''.join(random.choice([c.upper, c.lower])()
-                               for c in text))
+        await ctx.send(''.join(random.choice([c.upper, c.lower])() for c in text))
 
     @group(name='5igi0', aliases=['5igio', 'sigio', 'sigi0'], case_insensitive=True)
     async def sigio(self, _):
@@ -98,17 +96,15 @@ class Basic(Cog):
 
     @command(aliases=['interjection', 'rms', 'rmsquote', 'stallman'])
     async def interject(self, ctx, thing: str = 'Linux'):
-        """Interject on something attributing to RMS (Richard M. Stallman's)
-        nonfactual quote."""
+        """I'd just like to interject for a moment"""
 
         await ctx.send(f"I'd just like to interject for a moment.  What you're "
                        f"referring to as {thing}, is in fact, GNU/{thing}, or as "
                        f"I've recently taken to calling it, GNU plus {thing}.")
 
     @command(aliases=['emtext', 'etxt'])
-    async def emotetext(self, ctx, *, text: str):
-        """Transform normal English text into large emote using special
-        regional indicator emojis."""
+    async def emojitext(self, ctx, *, text: str):
+        """Emojify all English letters (uppercase in output)"""
 
         res = ''
         for c in text.lower():  # only lowercase.
