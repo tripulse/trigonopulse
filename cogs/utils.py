@@ -128,11 +128,8 @@ class Utils(Cog):
 
             await msg.delete()  # delete after sending.
 
-    @movemessage.command(name='bulk')
-    async def bulk_movemessage(self, ctx, dest: TextChannelConverter, num: int):
-        """Transfer atmost a given amount messages starting from the last
-        sent message in the current channel."""
+    @copymessage.command(name='bulk')
+    async def bulk_copymessage(self, ctx, dest: TextChannelConverter, num: int):
+        """Bulk move a certain amount of messages to a channel, in order they appear in"""
 
-        num += 1  # the message invoked this should stay intact.
-        await self.movemessage(ctx, dest,
-            *reversed((await ctx.history(limit=num).flatten())[1:]))
+        await self.copymessage(ctx, dest, ctx.history(limit=num+1, oldest_first=True))
