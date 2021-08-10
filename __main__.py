@@ -16,16 +16,12 @@
 from discord.ext.commands import Bot, when_mentioned
 
 import os
-import re
 
 if __name__ == '__main__':
-    # make instance of Bot that'd handle all the events or commands fired by
-    # discord, the prefix is through mentioning the bot user or in DMs just
-    # without prefix because it's redundant in a two-user channel.
-    handler = Bot(command_prefix=when_mentioned, case_insensitive=True)
-
-    handler.load_extension('cogs')
+    bot = Bot(command_prefix=when_mentioned, case_insensitive=True)
+    bot.load_extension('cogs')
+    
     try:
-        handler.run(os.environ['DISCORD_TOKEN'])
+        bot.run(os.environ['DISCORD_TOKEN'])
     except EnvironmentError:
         print('Token for accessing Discord API was not given')
