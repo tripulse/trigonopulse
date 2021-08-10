@@ -16,11 +16,11 @@
 from discord.ext.commands import (
     Cog,
     BucketType,
+    group,
     command,
+    max_concurrency,
     has_permissions,
     bot_has_permissions,
-    max_concurrency,
-    group,
     has_guild_permissions,
     bot_has_guild_permissions,
 )
@@ -29,14 +29,13 @@ from discord.ext.commands.converter import (
     MessageConverter,
     UserConverter
 )
-
 from discord import Embed
 
-from aioitertools import takewhile, map, filterfalse, enumerate
+from aioitertools import islice, chain, takewhile, filterfalse
+from aioitertools import iter as aiter
 from aioitertools.more_itertools import chunked
+
 from utils.bot import get_member_color
-from utils.misc import at, call
-from utils.filesys import Filename
 
 
 class Utils(Cog):
@@ -66,7 +65,7 @@ class Utils(Cog):
             if len(bulk) == 1:
                 messages = chain(bulk, messages)
                 break
-
+            
             ctx.channel.delete_messages(bulk)  # 100 snowflakes/request
             total += len(bulk)
 
