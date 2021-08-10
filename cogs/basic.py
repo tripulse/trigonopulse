@@ -21,9 +21,6 @@ from discord.ext.commands import (
 )
 
 import random
-from more_itertools import grouper
-from functools import reduce
-
 
 class Basic(Cog):
     @command(aliases=['tst', 'ping'])
@@ -42,18 +39,15 @@ class Basic(Cog):
     async def pick(self, ctx, *options):
         """Pick pseudorandomly from given list of options"""
 
-        try:
-            await ctx.send(random.choice(options))
-        except IndexError:
+        if not options:
             pass
+        await ctx.send(random.choice(options))
 
     @command(aliases=['expand'])
     async def space(self, ctx, spaces: int, *, text: str):
-        """Spaces characters with a defined amount to emphasize a text"""
+        """Spaces characters with a certain amount"""
 
-        if len(text) * spaces > 2000:
-            raise BadArgument("Disallowing 2000 character limit of Discord")
-        await ctx.send(''.join(c + ' ' * spaces for c in text))
+        await ctx.send(''.join(c + ' ' * spaces for c in text[:int(2000/spaces)]))
 
     @command(aliases=['skwiggle', 'rndcap'])
     async def altcap(self, ctx, *, text: str):
