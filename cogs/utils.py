@@ -83,50 +83,35 @@ class Utils(Cog):
             await ctx.send(f"Purged {num} messages in {ctx.channel.mention}",
                            delete_after=8)
 
-    @group(aliases=['movmsg', 'mmsg'],
-           invoke_without_command=True, case_insensitive=True)
-    @has_guild_permissions(manage_messages=True)
-    @bot_has_guild_permissions(manage_messages=True)
-    @max_concurrency(number=1)
-    async def movemessage(self, _, channel: TextChannelConverter,
-                          *messages: MessageConverter):
-        """Post some messages with certain IDs whose exist in the current
-        channel to a destination channel. Message containing an embed is
-        ignored as nested embeds aren't allowed."""
+    @group(aliases=['cpmessage', 'copymsg', 'cpmsg'], invoke_without_command=True, case_insensitive=True)
+    @has_guild_permissions(read_message_history=True, send_messages=True, manage_messages=True)
+    @bot_has_guild_permissions(read_message_history=True, send_messages=True, manage_messages=True)
+    async def copymessage(self, _, dest: TextChannelConverter, *msgs: MessageConverter):
+        """Copy messages in the current channel of certain amount to an another"""
 
-        for msg in messages:
-            destination_msg = Embed.from_dict({
-                'description': msg.content,
+        async for m in aiter(msgs):
+            dest_msg = Embed.from_dict({
+                'description': m.content,
                 'author': {
-                    'name': msg.author.nick or msg.author.name,
-                    'icon_url': str(msg.author.avatar_url)
+                    'name': m.author.nick or m.author.name,
+                    'icon_url': str(m.author.avatar_url)
                 },
-                'color': get_member_color(msg.author).value
+                'color': get_member_color(m.author).value
             })
 
             # TODO: video isn't supported for some reason.
-            first_attach_url = getattr(at(msg.attachments, 0), 'url', None)
-            is_first_embedable = Filename.from_url(first_attach_url).ext in \
-                ['jpg', 'jpeg', 'png', 'gif', 'webp']
+            first_url = getattr(m.attachments.get(0), 'url', None)
+            first_embedable = first_url.rpartition('.')[2] in ['jpg','jpeg','png','gif','webp']
 
-            if is_first_embedable:
-                destination_msg = Embed.from_dict({**destination_msg.to_dict(),
-                    **{'image': {'url': first_attach_url}}})
+            if first_embedable:
+                dest_msg.set_image(first_url)
 
-            if not is_first_embedable or len(msg.attachments) > 1:
-                attachment_str = '\n'.join(
-                    a.url for a in
-                    msg.attachments[int(not is_first_embedable):])
+            if not first_embedable or len(m.attachments) > 1:
+                # if first one is embeddable don't include it, else do.
+                if (attach_repr := '\n'.join(a.url for a in m.attachments[int(not first_embedable):])):
+                    dest_msg.add_field(name='Attachments', value=attach_repr)
 
-                if attachment_str:
-                    destination_msg.add_field(name='Attachments',
-                                              value=attachment_str)
-
-            destination_msg = await channel.send(embed=destination_msg)
-            for reaction in msg.reactions:
-                await destination_msg.add_reaction(reaction)
-
-            await msg.delete()  # delete after sending.
+            await dest.send(embed=dest_msg)
 
     @copymessage.command(name='bulk')
     async def bulk_copymessage(self, ctx, dest: TextChannelConverter, num: int):
