@@ -63,10 +63,9 @@ class Basic(Cog):
         await ctx.send(''.join(random.choice([c.upper, c.lower])()
                                for c in text))
 
-    @group(name='5igi0', aliases=['sigio', 'sigi0'], case_insensitive=True)
+    @group(name='5igi0', aliases=['5igio', 'sigio', 'sigi0'], case_insensitive=True)
     async def sigio(self, _):
-        """A morse-code like binary interchange format, that consists of `-`
-        and `'` characters"""
+        """K3C protocol of communication whose textual representation consists of only ASCII `-` and `'` characters"""
         pass
 
     @sigio.command(name='encode', aliases=['enc', 'e'])
