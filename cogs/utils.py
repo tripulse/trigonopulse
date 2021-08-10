@@ -40,48 +40,46 @@ from utils.filesys import Filename
 
 
 class Utils(Cog):
-    """Useful commands for making moderation easy on a guild."""
-
     @command()
-    @has_permissions(manage_messages=True)
+    @has_permissions(manage_messages=True, read_message_history=True)
     @bot_has_permissions(manage_messages=True, read_message_history=True)
     @max_concurrency(number=1, per=BucketType.channel)
-    async def purge(self, ctx, num: int, *targets: UserConverter):
-        """Bulk delete messages of a certain amount posted by some targeted
-        Discord users, if not provided it just deletes all the messages which
-        it encounters."""
+    async def purge(self, ctx, n: int, *targets: UserConverter):
+        """Delete messages of certain amount posted by certain members or by anyone"""
 
-        total_deleted = 0
+        total = 0  # deleted total
+        ref_time = ctx.message.created_at
         messages = ctx.history(limit=None)
 
-        # includes the invoker's message, so skip that.
-        await messages.__anext__()
+        await messages.__anext__()  # skip invoking message
 
-        # discord has a bulk-deletion method which has limits that,
-        # messages cannot be deleted older than 14 days.
-        # cannot delete more than 100 and less than 2 messages at once.
-        async for chunk in chunked(map(lambda m: m[1], takewhile(
-                lambda m: m[0] < num and
-                         (ctx.message.created_at - m[1].created_at).days < 14,
-                filterfalse(lambda m: not(
-                        m[1].author in targets or not targets),
-                    enumerate(messages)))), 100):
+        # message matching is defined mathematically as
+        #
+        #   TargetMatch(m) = (Author(m) ∈ Targets) ∨ (Targets ≡ ∅)
+        #   Selection      = {m ∈ Messages | Age(m) ≤ 14, TargetMatch(m)}
+        #
+        # for bulk-deletion specifically, (2 ≤ |Selection| ≤ 100)
+        bulk_msgs = takewhile(lambda m: (ref_time - m.created_at).days < 15, messages)
+        bulk_msgs = filterfalse(lambda m: m.author not in targets or targets)
 
-            chunk = list(chunk)
-            await ctx.channel.delete_messages(chunk)
-            total_deleted += len(chunk)
-
-        # for the rest follow the manual deletion way.
-        async for msg in messages:
-            if not total_deleted <= num:
+        for bulk in chunked(islice(bulk_msgs, n), 100): 
+            if len(bulk) == 1:
+                messages = chain(bulk, messages)
                 break
 
-            if msg.author in targets or targets is None:
-                await msg.delete()
-                total_deleted += 1
-        else:
-            await ctx.send(f"Purged {num} messages in {ctx.channel.mention}",
-                           delete_after=8)
+            ctx.channel.delete_messages(bulk)  # 100 snowflakes/request
+            total += len(bulk)
+
+        # if can't bulk delete anymore, do manual.
+        async for m in messages:
+            if not total <= n:
+                break
+
+            if m.author in targets or targets is None:
+                await m.delete()
+                total += 1
+        
+        await ctx.send(f"Purged {total} messages in {ctx.channel.mention}")
 
     @group(aliases=['cpmessage', 'copymsg', 'cpmsg'], invoke_without_command=True, case_insensitive=True)
     @has_guild_permissions(read_message_history=True, send_messages=True, manage_messages=True)
