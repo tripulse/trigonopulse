@@ -15,7 +15,6 @@
 
 from discord import Colour
 from random import choice
-from utils.misc import at
 
 
 def get_color() -> Colour:
@@ -31,5 +30,8 @@ def get_color() -> Colour:
 def get_member_color(member) -> Colour:
     """Get the final rendered color of a guild member as of its highest role."""
 
-    return getattr(at(member.roles, -1), 'colour', None) or \
-        Colour.default()
+    for role in reversed(member.roles):
+        if hasattr(role, 'colour'):
+            return role.colour
+    
+    return Colour.default()
