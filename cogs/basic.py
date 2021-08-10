@@ -72,29 +72,29 @@ class Basic(Cog):
     async def sigio_encode(self, ctx, *, text: str):
         """Encode from UTF-8 characters into 5IGI0 (maximum chars: 250)"""
 
-        text = text.encode('utf-8')  # single-byte encoding.
-        if len(text) * 8 > 2000:
-            return
+        text = text.encode('utf-8')[:250]  # 2000/8 = 250 bytes
+        data = bytearray(len(text) * 8)
 
-        await ctx.send(''.join(''.join("-'"[c >> b & 1]
-                                       for b in range(7, -1, -1))
-                                       for c in text))
+        for i,c in enumerate(text):
+            for b in range(7,-1,-1):
+                data[i*8 + b] = "-'"[c >> b & 1]
+
+        await ctx.send(data.decode('ascii'))
 
     @sigio.command(name='decode', aliases=['dec', 'd'])
     async def sigio_decode(self, ctx, sigi0: str):
         """Decode from 5IGI0 to UTF-8 characters"""
 
-        if len(sigi0) % 8 != 0:
-            raise BadArgument("Input length isn't multiple of 8")
-
-        data = bytes(reduce(lambda c, b: c | "-'".index(b[1]) << b[0],
-                            zip(range(7, -1, -1), bits), 0)
-                                for bits in grouper(sigi0, 8))
+        data = bytearray(sigi0 / 8)
 
         try:
-            await ctx.send(data.decode('utf-8'))
-        except UnicodeDecodeError:
-            raise BadArgument("5IGI0 sequence cannot be converted using UTF-8")
+            for i in range(sigi0 / 8):
+                for b in range(7, -1, -1):
+                    data[i] |= "-'".index(data[i*8+b]) << b
+        except ValueError:
+            raise BadArgument("5IGI0 sequence doesn't only contain `-` and `'` chars")
+
+        await ctx.send(data.decode('utf-8', 'ignore')[:2000])
 
     @command(aliases=['interjection', 'rms', 'rmsquote', 'stallman'])
     async def interject(self, ctx, thing: str = 'Linux'):
