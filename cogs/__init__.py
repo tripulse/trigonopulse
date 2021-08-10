@@ -13,18 +13,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from inspect import indentsize
 import os.path
 import pathlib
 import importlib.util
+
+from discord.embeds import Embed
 from utils.misc import call
-from utils.filesys import Filename
 import itertools
 import traceback
 
 from discord.ext.commands import Cog
-from typing import (
-    Iterator
-)
 from discord.ext.commands.errors import (
     BadArgument,
     CommandError,
@@ -41,48 +40,34 @@ from discord.ext.commands.errors import (
     InvalidEndOfQuotedStringError,
 )
 
+from pathlib import Path
+from os.path import dirname
 
-def collect_cogs() -> Iterator[Cog]:
-    """Collect all exported Cog inherited objects exported by Python modules
-    in the current directory, methods starting with an underscore are
-    considered private and not loaded.
-
-    :return: an iterator of retrieved Cogs.
-    """
-
-    def load_module(name, path):
-        spec = importlib.util.spec_from_file_location(name, path)
-        module = importlib.util.module_from_spec(spec)
-
-        spec.loader.exec_module(module)
-        return module
-
-    return itertools.chain.from_iterable(
-        map(lambda mod: map(lambda x: x[1],  # extract actual object.
-            filter(
-                # check if one of their superclasses was Cog, but
-                # not Cog itself as its an abstract class.
-                lambda e: call(issubclass, e[1], Cog) and
-                          e[1] != Cog,
-                load_module(Filename.from_str(mod).name, mod)
-                    .__dict__.items())),  # get global objects.
-            pathlib.Path(os.path.dirname(__file__)).glob('*.py')))
+from importlib.util import spec_from_file_location, module_from_spec
 
 
 def setup(bot):
     @bot.event
     async def on_command_error(ctx, exception):
-        # a custom error handler for defining where should the "generalized"
-        # exceptions go.
+        # if the exception is of any of selected classes redirect to discord
         if isinstance(exception,
-            (BadArgument, CommandError, CommandNotFound, CommandOnCooldown,
-             CheckAnyFailure, NoPrivateMessage, MissingPermissions,
-             UnexpectedQuoteError, BotMissingPermissions,
-             MaxConcurrencyReached, MissingRequiredArgument,
-             ExpectedClosingQuoteError, InvalidEndOfQuotedStringError)):
-            await ctx.send(f"```{exception}```")
-        traceback.print_exception(exception.__class__, exception,
-                                  exception.__traceback__)
+            (BadArgument, CommandError, CommandNotFound, CommandOnCooldown, CheckAnyFailure, NoPrivateMessage,
+             MissingPermissions, UnexpectedQuoteError, BotMissingPermissions, MaxConcurrencyReached,
+             MissingRequiredArgument, ExpectedClosingQuoteError, InvalidEndOfQuotedStringError)):
+            await ctx.send(embed=Embed(description=str(exception)))
 
-    for cog in collect_cogs():
-        bot.add_cog(cog(bot))
+        # as well as in stdout with rest of the exception classes too
+        traceback.print_exception(exception.__class__, exception, exception.__traceback__)
+
+    
+    # underscored files will be ignored as private
+    for path in Path(dirname(__file__)).glob('[!_]*.py'):
+        spec = spec_from_file_location(path.stem, path)
+        mod = module_from_spec(spec)
+
+        # do we need to do this?
+        spec.loader.exec_module(mod)
+
+        for o in mod.__dict__.values():
+            if isinstance(o, type) and o != Cog and issubclass(o, Cog):
+                bot.add_cog(o)
