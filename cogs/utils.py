@@ -92,8 +92,7 @@ class Utils(Cog):
                 'author': {
                     'name': m.author.nick or m.author.name,
                     'icon_url': str(m.author.avatar_url)
-                },
-                'color': get_member_color(m.author).value
+                }
             })
 
             # TODO: video isn't supported for some reason.
