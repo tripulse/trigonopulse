@@ -56,7 +56,9 @@ class Utils(Cog):
         #
         # for bulk-deletion specifically, (2 ≤ |Selection| ≤ 100)
         bulk_msgs = takewhile(lambda m: (ref_time - m.created_at).days < 15, messages)
-        bulk_msgs = filterfalse(lambda m: m.author not in targets or targets)
+
+        if targets:
+            bulk_msgs = filterfalse(lambda m: m.author not in targets)
 
         for bulk in chunked(islice(bulk_msgs, n), 100): 
             if len(bulk) == 1:
