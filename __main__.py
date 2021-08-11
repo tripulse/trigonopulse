@@ -13,18 +13,23 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from discord import Intents
-from discord.ext.commands import Bot, when_mentioned
+import logging
 
-import os
+from discord import Intents
+from discord.ext.commands.bot import Bot, when_mentioned
+
+from os import environ
 
 if __name__ == '__main__':
-    bot = Bot(command_prefix=when_mentioned, case_insensitive=True)
-    bot.intents = Intents(guild=True, members=True, guild_messages=True)
+    logging.basicConfig(format='[%(levelname)s] %(name)s: %(message)s', level=logging.INFO)
+    
+    bot = Bot(when_mentioned, case_insensitive=True)
+    bot.intents = Intents(messages=True, guilds=True)
+    bot.logger = logging.getLogger()
 
     bot.load_extension('cogs')
-    
+
     try:
-        bot.run(os.environ['DISCORD_TOKEN'])
+        bot.run(environ['DISCORD_TOKEN'])
     except EnvironmentError:
         print('Token for accessing Discord API was not given')
