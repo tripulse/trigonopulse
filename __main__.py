@@ -13,12 +13,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from discord import Intents
 from discord.ext.commands import Bot, when_mentioned
 
 import os
 
 if __name__ == '__main__':
     bot = Bot(command_prefix=when_mentioned, case_insensitive=True)
+    bot.intents = Intents(guild=True, members=True, guild_messages=True)
+
     bot.load_extension('cogs')
     
     try:
