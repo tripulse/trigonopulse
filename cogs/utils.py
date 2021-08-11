@@ -35,9 +35,6 @@ from aioitertools import islice, chain, takewhile, filterfalse
 from aioitertools import iter as aiter
 from aioitertools.more_itertools import chunked
 
-from utils.bot import get_member_color
-
-
 class Utils(Cog):
     @command()
     @has_permissions(manage_messages=True, read_message_history=True)

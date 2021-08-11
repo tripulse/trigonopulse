@@ -13,16 +13,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from inspect import indentsize
-import os.path
-import pathlib
-import importlib.util
-
-from discord.embeds import Embed
-from utils.misc import call
-import itertools
 import traceback
 
+from discord.embeds import Embed
 from discord.ext.commands import Cog
 from discord.ext.commands.errors import (
     BadArgument,
