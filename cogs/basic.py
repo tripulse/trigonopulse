@@ -20,6 +20,9 @@ from discord.ext.commands import (
     command,
 )
 
+from math import tau, cos
+from functools import reduce
+
 import random
 
 class Basic(Cog):
@@ -109,3 +112,29 @@ class Basic(Cog):
                 else c
 
         await ctx.send(res[:2000])
+
+    @command(aliases=['wavespc', 'wavyspc', 'wavify'])
+    async def sinspc(self, ctx, A: float, w: float, *, text: str):
+        """Space text sinusodially with a certain amplitude (A) and wavelength (w)
+
+        s[i] = M * -cos(τ * (1/w) * (i/N)) + M   [M := M/2]
+            where i = char index
+                  M = maximum spacing
+                  w = strech factor
+                  N = number of chars
+                  s = list of num spaces after each char
+
+            for w < 0, w = N
+        """
+
+        w  = len(text)-1 if w < 0 else w
+        A /= 2
+        f  = 1/w
+
+        shaping = lambda x: int(A * -cos(tau * f * x) + A)
+        shaping = map(shaping, range(len(text) - 1))
+
+        out  = reduce(lambda acc,t_s: acc + t_s[0] + ' ' * t_s[1], zip(text, shaping), '')
+        out += text[-1]
+
+        await ctx.send(out)
