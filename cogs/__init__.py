@@ -63,4 +63,4 @@ def setup(bot):
 
         for o in mod.__dict__.values():
             if isinstance(o, type) and o != Cog and issubclass(o, Cog):
-                bot.add_cog(o)
+                bot.add_cog(o())
