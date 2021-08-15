@@ -23,13 +23,13 @@ from os import environ
 if __name__ == '__main__':
     logging.basicConfig(format='[%(levelname)s] %(name)s: %(message)s', level=logging.INFO)
     
-    bot = Bot(when_mentioned, case_insensitive=True)
-    bot.intents = Intents(messages=True, guilds=True)
+    opts = Intents(messages=True, guilds=True)
+    bot = Bot(when_mentioned, case_insensitive=True, intents=opts)
     bot.logger = logging.getLogger()
 
     bot.load_extension('cogs')
 
     try:
         bot.run(environ['DISCORD_TOKEN'])
-    except EnvironmentError:
+    except KeyError:
         print('Token for accessing Discord API was not given')
