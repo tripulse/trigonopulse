@@ -22,8 +22,7 @@ from discord.ext.commands import (
 
 from math import tau, cos
 from functools import reduce
-
-import random
+from random import choice, uniform, choices
 
 class Basic(Cog):
     @command(aliases=['tst', 'ping'])
@@ -36,7 +35,7 @@ class Basic(Cog):
     async def random(self, ctx, min: float, max: float):
         """Generate a uniform pseudorandom real number within (min..max]"""
 
-        await ctx.send(random.uniform(min, max))
+        await ctx.send(uniform(min, max))
 
     @command(aliases=['choose'])
     async def pick(self, ctx, *options):
@@ -44,7 +43,7 @@ class Basic(Cog):
 
         if not options:
             pass
-        await ctx.send(random.choice(options))
+        await ctx.send(choice(options))
 
     @command(aliases=['expand'])
     async def space(self, ctx, spaces: int, *, text: str):
@@ -56,7 +55,7 @@ class Basic(Cog):
     async def altcap(self, ctx, *, text: str):
         """Randomly capitalizes each English letter of a text"""
 
-        await ctx.send(''.join(random.choice([c.upper, c.lower])() for c in text))
+        await ctx.send(''.join(choice([c.upper, c.lower])() for c in text))
 
     @group(name='5igi0', aliases=['5igio', 'sigio', 'sigi0'], case_insensitive=True)
     async def sigio(self, _):
@@ -138,3 +137,10 @@ class Basic(Cog):
         out += text[-1]
 
         await ctx.send(out)
+
+    @command(aliases=['upgen', 'upvote', 'genupvote'])
+    async def grsupvote(self, ctx, k: int):
+        """Generate a GRS upvote of a certain length"""
+
+        out = choices('^0123456789', cum_weights=[70,71,72,73,74,75,76,92,93,94,95], k=k)
+        await ctx.send(''.join(out))
