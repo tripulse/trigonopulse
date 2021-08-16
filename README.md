@@ -1,3 +1,7 @@
+Trigonopulse is a K3C (Kook Kak Koq Consortium) compliant fast, well-written and optimized Discord bot.
+It has K3C compliant features like GRS Upvote generator, K3CV format encoding/decoding, Sinusoidal spacing
+and some features not provided by any Discord bot.
+
 To get things working.
 
 - Get a copy of [PyPy](https://pypy.org/), good for this job.
