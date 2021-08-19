@@ -10,4 +10,5 @@ To get things working.
 - Put the *bot token* in `DISCORD_TOKEN` environment variable.
 - Finally to run the bot, execute `python3 __main__.py`.
 
-Slash commands will be registered and `GUILD_MESSAGES` and `DIRECT_MESSAGES` disabled for performance.
+The bot does not work in (Group) DMs. It is invoked like `@trigonopulse command` which removes the need for prefixes.
+Slash commands might be used in future.
