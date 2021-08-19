@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from discord import Embed
 from discord.ext.commands import (
     Cog,
     BucketType,
@@ -29,9 +30,8 @@ from discord.ext.commands.converter import (
     MessageConverter,
     UserConverter
 )
-from discord import Embed
 
-from aioitertools import islice, chain, takewhile, filterfalse
+from aioitertools import chain, takewhile, filterfalse
 from aioitertools import iter as aiter
 from aioitertools.more_itertools import chunked
 
@@ -40,12 +40,13 @@ class Utils(Cog):
     @has_permissions(manage_messages=True, read_message_history=True)
     @bot_has_permissions(manage_messages=True, read_message_history=True)
     @max_concurrency(number=1, per=BucketType.channel)
-    async def purge(self, ctx, n: int, *targets: UserConverter):
-        """Delete messages of certain amount posted by certain members or by anyone"""
+    async def purge(self, ctx, end: MessageConverter, *targets: UserConverter):
+        """Delete messages upto a sentinel message (exclusive) posted by certain members or anyone"""
 
-        total = 0  # deleted total
+        total    = 0  # deleted total
         ref_time = ctx.message.created_at
-        messages = ctx.history(limit=None)
+        messages = ctx.history(after=end, oldest_first=False)
+        targets  = tuple(map(lambda u: u.id, targets))
 
         await messages.__anext__()  # skip invoking message
 
@@ -69,22 +70,19 @@ class Utils(Cog):
             total += len(bulk)
 
         # if can't bulk delete anymore, do manual.
-        async for m in messages:
-            if not total <= n:
-                break
-
-            if m.author in targets or targets is None:
+        if targets:
+            async for m in messages:
+                if m.author.id in targets:
+                    await m.delete()
+                    total += 1
+        else:
+            async for m in messages:
                 await m.delete()
                 total += 1
         
         await ctx.send(f"Purged {total} messages in {ctx.channel.mention}")
-
-    @group(aliases=['cpmessage', 'copymsg', 'cpmsg'], invoke_without_command=True, case_insensitive=True)
-    @has_guild_permissions(read_message_history=True, send_messages=True, manage_messages=True)
-    @bot_has_guild_permissions(read_message_history=True, send_messages=True, manage_messages=True)
-    async def copymessage(self, _, dest: TextChannelConverter, *msgs: MessageConverter):
-        """Copy messages in the current channel of certain amount to an another"""
-
+    
+    async def _cpmsg(self, _, dest, msgs):
         async for m in aiter(msgs):
             dest_msg = Embed.from_dict({
                 'description': m.content,
@@ -102,15 +100,21 @@ class Utils(Cog):
             if first_embedable:
                 dest_msg.set_image(url=first_url)
 
-            if not first_embedable or len(m.attachments) > 1:
-                # if first one is embeddable don't include it, else do.
-                if (attach_repr := '\n'.join(a.url for a in m.attachments[int(not first_embedable):])):
-                    dest_msg.add_field(name='Attachments', value=attach_repr)
+            if (attach_repr := '\n'.join(a.url for a in m.attachments)):
+                dest_msg.add_field(name='Attachments', value=attach_repr)
 
             await dest.send(embed=dest_msg)
+    
+    @group(aliases=['cpmessage', 'copymsg', 'cpmsg'], invoke_without_command=True, case_insensitive=True)
+    @has_guild_permissions(read_message_history=True, send_messages=True, manage_messages=True)
+    @bot_has_guild_permissions(read_message_history=True, send_messages=True, manage_messages=True)
+    async def copymessage(self, _, dest: TextChannelConverter, *msgs: MessageConverter):
+        """Copy given messages in the current channel to an another channel"""
+
+        await self._cpmsg(dest, msgs)
 
     @copymessage.command(name='bulk')
-    async def bulk_copymessage(self, ctx, dest: TextChannelConverter, num: int):
-        """Bulk move a certain amount of messages to a channel, in order they appear in"""
+    async def bulk_copymessage(self, ctx, dest: TextChannelConverter, end: MessageConverter, begin: MessageConverter = None):
+        """Bulk copy a range of messages defined by two sentinel messages (exclusive)"""
 
-        await self.copymessage(ctx, dest, ctx.history(limit=num+1, oldest_first=True))
+        await self._cpmsg(ctx, dest, ctx.history(limit=None, after=end, before=begin or ctx.message))
