@@ -58,14 +58,14 @@ class Utils(Cog):
         bulk_msgs = takewhile(lambda m: (ref_time - m.created_at).days < 15, messages)
 
         if targets:
-            bulk_msgs = filterfalse(lambda m: m.author not in targets)
+            bulk_msgs = filterfalse(lambda m: m.author.id not in targets, bulk_msgs)
 
-        for bulk in chunked(islice(bulk_msgs, n), 100): 
+        async for bulk in chunked(bulk_msgs, 100):
             if len(bulk) == 1:
                 messages = chain(bulk, messages)
                 break
             
-            ctx.channel.delete_messages(bulk)  # 100 snowflakes/request
+            await ctx.channel.delete_messages(bulk)  # 100 snowflakes/request
             total += len(bulk)
 
         # if can't bulk delete anymore, do manual.
@@ -89,17 +89,18 @@ class Utils(Cog):
             dest_msg = Embed.from_dict({
                 'description': m.content,
                 'author': {
-                    'name': m.author.nick or m.author.name,
+                    'name': m.author.name,
                     'icon_url': str(m.author.avatar_url)
                 }
             })
 
             # TODO: video isn't supported for some reason.
-            first_url = getattr(m.attachments.get(0), 'url', None)
-            first_embedable = first_url.rpartition('.')[2] in ['jpg','jpeg','png','gif','webp']
+            first_url       = m.attachments[0].url if len(m.attachments) > 0 else None
+            first_embedable = first_url.rpartition('.')[2] in ['jpg','jpeg','png','gif','webp'] \
+                                if first_url else False
 
             if first_embedable:
-                dest_msg.set_image(first_url)
+                dest_msg.set_image(url=first_url)
 
             if not first_embedable or len(m.attachments) > 1:
                 # if first one is embeddable don't include it, else do.
