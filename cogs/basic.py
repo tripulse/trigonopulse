@@ -21,15 +21,15 @@ from discord.ext.commands import (
 )
 
 from math import tau, cos
-from functools import reduce
 from random import choice, uniform, choices
+
 
 class Basic(Cog):
     @command(aliases=['tst', 'ping'])
     async def test(self, ctx):
-        """Verify that the bot is usable, tells the WebSocket RTT"""
+        """Verify that the bot is invokable"""
 
-        await ctx.send(round(ctx.bot.latency * 1000) + "ms")
+        await ctx.send(f"{round(ctx.bot.latency * 1000)}ms")
 
     @command(aliases=['rnd', 'rndnum', 'rnum'])
     async def random(self, ctx, min: float, max: float):
@@ -49,51 +49,52 @@ class Basic(Cog):
     async def space(self, ctx, spaces: int, *, text: str):
         """Spaces characters with a certain amount"""
 
-        await ctx.send(''.join(c + ' ' * spaces for c in text[:int(2000/spaces)]))
+        await ctx.send(''.join(c + ' ' * spaces for c in text[:int(4000/spaces)]))
 
     @command(aliases=['skwiggle', 'rndcap'])
     async def altcap(self, ctx, *, text: str):
         """Randomly capitalizes each English letter of a text"""
 
-        await ctx.send(''.join(choice([c.upper, c.lower])() for c in text))
+        await ctx.send(''.join(choice((c.upper, c.lower))() for c in text))
 
     @group(name='5igi0', aliases=['5igio', 'sigio', 'sigi0'], case_insensitive=True)
     async def sigio(self, _):
-        """K3C protocol of communication whose textual representation consists of only ASCII `-` and `'` characters"""
+        """K3C protocol of communication consiting of only ASCII `-` and `'`"""
         pass
 
     @sigio.command(name='encode', aliases=['enc', 'e'])
     async def sigio_encode(self, ctx, *, text: str):
-        """Encode from UTF-8 characters into 5IGI0 (maximum chars: 250)"""
+        """Encode from UTF-8 characters into 5IGI0 (max=250)"""
 
-        text = text.encode('utf-8')[:250]  # 2000/8 = 250 bytes
-        data = bytearray(len(text) * 8)
+        text = text.encode('utf-8')[:500]
+        sigi0 = bytearray(len(text) * 8)
 
         for i,c in enumerate(text):
             for b in range(7,-1,-1):
-                data[i*8 + b] = "-'"[c >> b & 1]
+                sigi0[i*8+b] = b"-'"[c >> b & 1]
 
-        await ctx.send(data.decode('ascii'))
+        await ctx.send(sigi0.decode('ascii'))
 
     @sigio.command(name='decode', aliases=['dec', 'd'])
     async def sigio_decode(self, ctx, sigi0: str):
         """Decode from 5IGI0 to UTF-8 characters"""
 
-        data = bytearray(sigi0 / 8)
+        text = bytearray(len(sigi0) // 8)
 
         try:
-            for i in range(sigi0 / 8):
+            for i in range(len(sigi0) // 8):
                 for b in range(7, -1, -1):
-                    data[i] |= "-'".index(data[i*8+b]) << b
+                    text[i] |= "-'".index(sigi0[i*8+b]) << b
         except ValueError:
-            raise BadArgument("5IGI0 sequence doesn't only contain `-` and `'` chars")
+            raise BadArgument("5IGI0 contains other chars than `-` and `'`")
 
-        await ctx.send(data.decode('utf-8', 'ignore')[:2000])
+        await ctx.send(text.decode('utf-8', 'ignore'))
 
     @command(aliases=['interjection', 'rms', 'rmsquote', 'stallman'])
     async def interject(self, ctx, thing: str = 'Linux'):
         """I'd just like to interject for a moment"""
 
+        thing = thing[:1285]
         await ctx.send(f"I'd just like to interject for a moment.  What you're "
                        f"referring to as {thing}, is in fact, GNU/{thing}, or as "
                        f"I've recently taken to calling it, GNU plus {thing}.")
@@ -104,22 +105,22 @@ class Basic(Cog):
 
         res = ''
         for c in text.lower():  # only lowercase.
-            if len(res) > 2000:
+            if len(res) > 4000:
                 break
             res += f':regional_indicator_{c}:' \
                 if ord(c) > 96 and ord(c) < 123 \
                 else c
 
-        await ctx.send(res[:2000])
+        await ctx.send(res[:4000])
 
     @command(aliases=['wavespc', 'wavyspc', 'wavify'])
     async def sinspc(self, ctx, A: float, w: float, *, text: str):
-        """Space text sinusodially with a certain amplitude (A) and wavelength (w)
+        """Strech text sinusodially with an amplitude (A) and wavelength (w)
 
         s[i] = M * -cos(τ * (1/w) * (i/N)) + M   [M := M/2]
             where i = char index
                   M = maximum spacing
-                  w = strech factor
+                  w = wavelength (in num-chars)
                   N = number of chars
                   s = list of num spaces after each char
 
@@ -133,14 +134,20 @@ class Basic(Cog):
         shaping = lambda x: int(A * -cos(tau * f * x) + A)
         shaping = map(shaping, range(len(text) - 1))
 
-        out  = reduce(lambda acc,t_s: acc + t_s[0] + ' ' * t_s[1], zip(text, shaping), '')
+        out = ''
+        for c,s in zip(text, shaping):
+            if len(out) > 4000:
+                break
+            out += c + ' ' * s
         out += text[-1]
 
-        await ctx.send(out)
+        await ctx.send(out[:4000])
 
     @command(aliases=['upgen', 'upvote', 'genupvote'])
     async def grsupvote(self, ctx, k: int):
         """Generate a GRS upvote of a certain length"""
+
+        k = 4000 if k > 4000 else k
 
         out = choices('^0123456789', cum_weights=[70,71,72,73,74,75,76,92,93,94,95], k=k)
         await ctx.send(''.join(out))
