@@ -49,7 +49,7 @@ class Basic(Cog):
     async def space(self, ctx, spaces: int, *, text: str):
         """Spaces characters with a certain amount"""
 
-        await ctx.send(''.join(c + ' ' * spaces for c in text[:int(4000/spaces)]))
+        await ctx.send(''.join(c + ' ' * spaces for c in text[:int(2000/spaces)]))
 
     @command(aliases=['skwiggle', 'rndcap'])
     async def altcap(self, ctx, *, text: str):
@@ -66,7 +66,7 @@ class Basic(Cog):
     async def sigio_encode(self, ctx, *, text: str):
         """Encode from UTF-8 characters into 5IGI0 (max=250)"""
 
-        text = text.encode('utf-8')[:500]
+        text = text.encode('utf-8')[:250]
         sigi0 = bytearray(len(text) * 8)
 
         for i,c in enumerate(text):
@@ -94,7 +94,7 @@ class Basic(Cog):
     async def interject(self, ctx, thing: str = 'Linux'):
         """I'd just like to interject for a moment"""
 
-        thing = thing[:1285]
+        thing = thing[:619]
         await ctx.send(f"I'd just like to interject for a moment.  What you're "
                        f"referring to as {thing}, is in fact, GNU/{thing}, or as "
                        f"I've recently taken to calling it, GNU plus {thing}.")
@@ -105,13 +105,13 @@ class Basic(Cog):
 
         res = ''
         for c in text.lower():  # only lowercase.
-            if len(res) > 4000:
+            if len(res) > 2000:
                 break
             res += f':regional_indicator_{c}:' \
                 if ord(c) > 96 and ord(c) < 123 \
                 else c
 
-        await ctx.send(res[:4000])
+        await ctx.send(res[:2000])
 
     @command(aliases=['wavespc', 'wavyspc', 'wavify'])
     async def sinspc(self, ctx, A: float, w: float, *, text: str):
@@ -136,18 +136,18 @@ class Basic(Cog):
 
         out = ''
         for c,s in zip(text, shaping):
-            if len(out) > 4000:
+            if len(out) > 2000:
                 break
             out += c + ' ' * s
         out += text[-1]
 
-        await ctx.send(out[:4000])
+        await ctx.send(out[:2000])
 
     @command(aliases=['upgen', 'upvote', 'genupvote'])
     async def grsupvote(self, ctx, k: int):
         """Generate a GRS upvote of a certain length"""
 
-        k = 4000 if k > 4000 else k
+        k = 2000 if k > 2000 else k
 
         out = choices('^0123456789', cum_weights=[70,71,72,73,74,75,76,92,93,94,95], k=k)
         await ctx.send(''.join(out))
