@@ -91,19 +91,9 @@ class Utils(Cog):
                     'icon_url': str(m.author.avatar_url)
                 }
             })
+            attaches = map(lambda a: a.to_file(), m.attachments)
 
-            # TODO: video isn't supported for some reason.
-            first_url       = m.attachments[0].url if len(m.attachments) > 0 else None
-            first_embedable = first_url.rpartition('.')[2] in ['jpg','jpeg','png','gif','webp'] \
-                                if first_url else False
-
-            if first_embedable:
-                dest_msg.set_image(url=first_url)
-
-            if (attach_repr := '\n'.join(a.url for a in m.attachments)):
-                dest_msg.add_field(name='Attachments', value=attach_repr)
-
-            await dest.send(embed=dest_msg)
+            await dest.send(embed=dest_msg, files=list(attaches))
     
     @group(aliases=['cpmessage', 'copymsg', 'cpmsg'], invoke_without_command=True, case_insensitive=True)
     @has_guild_permissions(read_message_history=True, send_messages=True, manage_messages=True)
