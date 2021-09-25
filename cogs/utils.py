@@ -27,11 +27,10 @@ from discord.ext.commands import (
 )
 from discord.ext.commands.converter import (
     TextChannelConverter,
-    MessageConverter,
-    UserConverter
+    MessageConverter
 )
 
-from aioitertools import chain, takewhile, filterfalse
+from aioitertools import chain, takewhile
 from aioitertools import iter as aiter
 from aioitertools.more_itertools import chunked
 
@@ -40,49 +39,40 @@ class Utils(Cog):
     @has_permissions(manage_messages=True, read_message_history=True)
     @bot_has_permissions(manage_messages=True, read_message_history=True)
     @max_concurrency(number=1, per=BucketType.channel)
-    async def purge(self, ctx, end: MessageConverter, *targets: UserConverter):
-        """Delete messages upto a sentinel message (exclusive) posted by certain members or anyone"""
+    async def purge(self, ctx, end: MessageConverter, begin: MessageConverter = None):
+        """Delete a range of messages defined by two sentinel messages (inclusive)"""
 
         total    = 0  # deleted total
         ref_time = ctx.message.created_at
-        messages = ctx.history(after=end, oldest_first=False)
-        targets  = tuple(map(lambda u: u.id, targets))
+        messages = ctx.history(after=end, before=begin, oldest_first=False)
 
-        await messages.__anext__()  # skip invoking message
+        if not begin:
+            messages.__anext__()  # skip invoking message
 
-        # message matching is defined mathematically as
+        # message matching is defined mathematically as,
+        #   Selection = [Begin..End] ⊆ Messages
         #
-        #   TargetMatch(m) = (Author(m) ∈ Targets) ∨ (Targets ≡ ∅)
-        #   Selection      = {m ∈ Messages | Age(m) ≤ 14, TargetMatch(m)}
-        #
-        # for bulk-deletion specifically, (2 ≤ |Selection| ≤ 100)
+        # for bulk-deletion specifically,
+        #   BulkDelete = {m ∈ Selection | Age(m) ≤ 14}  [(2 ≤ |Selection| ≤ 100)]
         bulk_msgs = takewhile(lambda m: (ref_time - m.created_at).days < 15, messages)
-
-        if targets:
-            bulk_msgs = filterfalse(lambda m: m.author.id not in targets, bulk_msgs)
 
         async for bulk in chunked(bulk_msgs, 100):
             if len(bulk) == 1:
                 messages = chain(bulk, messages)
-                break
+                break  # queue remaining for manual deletion.
             
             await ctx.channel.delete_messages(bulk)  # 100 snowflakes/request
             total += len(bulk)
 
         # if can't bulk delete anymore, do manual.
-        if targets:
-            async for m in messages:
-                if m.author.id in targets:
-                    await m.delete()
-                    total += 1
-        else:
-            async for m in messages:
-                await m.delete()
-                total += 1
-        
-        await ctx.send(f"Purged {total} messages in {ctx.channel.mention}")
+        async for m in messages:
+            await m.delete()
+            total += 1
+
+        await end.delete()
+        await ctx.send(f"Purged {total+1} messages in {ctx.channel.mention}")
     
-    async def _cpmsg(self, _, dest, msgs):
+    async def _cpmsg(self, dest, msgs):
         async for m in aiter(msgs):
             dest_msg = Embed.from_dict({
                 'description': m.content,
@@ -105,6 +95,10 @@ class Utils(Cog):
 
     @copymessage.command(name='bulk')
     async def bulk_copymessage(self, ctx, dest: TextChannelConverter, end: MessageConverter, begin: MessageConverter = None):
-        """Bulk copy a range of messages defined by two sentinel messages (exclusive)"""
+        """Bulk copy a range of messages defined by two sentinel messages (inclusive)"""
 
-        await self._cpmsg(ctx, dest, ctx.history(limit=None, after=end, before=begin or ctx.message))
+        if begin:
+            await self._cpmsg(dest, [begin])
+        
+        await self._cpmsg(dest, ctx.history(limit=None, after=end, before=begin or ctx.message))
+        await self._cpmsg(dest, [end])
