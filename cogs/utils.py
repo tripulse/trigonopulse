@@ -81,9 +81,9 @@ class Utils(Cog):
                     'icon_url': str(m.author.avatar_url)
                 }
             })
-            attaches = map(lambda a: a.to_file(), m.attachments)
+            attaches = list(map(lambda a: a.to_file(), m.attachments))
 
-            await dest.send(embed=dest_msg, files=list(attaches))
+            await dest.send(embed=dest_msg, files=attaches if attaches else None)
     
     @group(aliases=['cpmessage', 'copymsg', 'cpmsg'], invoke_without_command=True, case_insensitive=True)
     @has_guild_permissions(read_message_history=True, send_messages=True, manage_messages=True)
